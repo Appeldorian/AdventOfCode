@@ -45,21 +45,47 @@ pub fn solve() {
     let finish_positions = find_nodes_ending_in_letter(&nodes, &'Z');
     // let mut denominators = Vec::new();
     // println!("Searching: {} => {}", position.start, );
-    let mut nr_steps = 0;    
-    'outer: while true {
-        for position in &mut positions {
+
+    
+    let mut cycles_until_end = Vec::new();
+    for position in &mut positions {
+        cycles_until_end.push(Vec::new());
+        println!("Position {}", position.start);
+        let mut nr_steps = 0_u64;    
+        'outer: while true {
             for instruction in instructions.chars() 
             {
                 let next_position = get_next_position(&nodes, &position, &instruction);
                 *position = *next_position;
-                
-            }
-            nr_steps += 1;
-            if check_if_all_finished(positions) {
-                println!("Finished at: {}", position.start);
-                break 'outer;
+
+                nr_steps += 1;
+                if position.start.ends_with('Z') {
+                    let cycles_for_this_position: &mut Vec<u64> = cycles_until_end.last_mut().unwrap();
+                    if cycles_for_this_position.last().is_some() {
+                        let diff_with_previous_nr_steps = nr_steps - cycles_for_this_position.last().unwrap();
+                        if !cycles_for_this_position.contains(&diff_with_previous_nr_steps) {
+                            println!("Steps: {}, diff: {}", nr_steps, diff_with_previous_nr_steps);
+                            cycles_for_this_position.push(nr_steps.clone());
+                        }
+                        else {
+                            println!("Same cycle: {}", nr_steps);
+                            break 'outer;
+                        }
+                    }
+                    else {
+                        cycles_for_this_position.push(nr_steps);
+                    }
+
+                }
             }
         } 
+    }
+
+    let mut lcm_final = 1;
+    for (index, cycles) in cycles_until_end.iter().enumerate() {
+        println!("Cycles for position {}: ", positions[index].start);
+        println!("{:?}", cycles);
+        lcm_final = lcm(lcm_final, cycles.first().unwrap().clone());
     }
     // denominators.push(nr_steps);
     // let mut lcm_final = 1;
@@ -74,7 +100,7 @@ pub fn solve() {
     
     println!("LCMS:");
     println!("Finish reached!");
-    // println!("Puzzle 8 b score: {}", lcms.iter().min().unwrap());
+    println!("Puzzle 8 b score: {}", lcm_final);
 }
 
 #[derive(PartialEq, PartialOrd, Clone, Copy)]
